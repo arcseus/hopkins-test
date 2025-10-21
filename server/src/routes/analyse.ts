@@ -1,13 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { createRequestLogger } from '../logger';
 import { validateMultipartUpload, getValidatedFile } from '../middleware/upload';
-import { 
-  FileSizeError, 
-  FileTypeError, 
-  NoFileError, 
+import { processZipFile } from '../utils/processing-pipeline';
+import {
+  FileSizeError,
+  FileTypeError,
+  NoFileError,
   FileValidationError,
   UnsupportedFileTypeError,
-  MultipartError 
+  MultipartError
 } from '../errors/validation';
 
 /**
@@ -39,12 +40,26 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
       size: validatedFile.size 
     }, 'ZIP file validated successfully');
     
-    // TODO: Implement ZIP extraction and analysis pipeline
-    const analysisId = 'stub-analysis-id';
+    // Step 3: Extract ZIP file buffer
+    const zipBuffer = await streamToBuffer(validatedFile.file);
+    
+    // Step 4: Process ZIP file through the pipeline
+    requestLogger.info('Starting ZIP processing pipeline');
+    const processingResult = await processZipFile(zipBuffer);
+    
+    requestLogger.info({
+      totalFiles: processingResult.totalFiles,
+      successfulFiles: processingResult.successfulFiles,
+      failedFiles: processingResult.failedFiles,
+      processingTime: processingResult.totalProcessingTime
+    }, 'ZIP processing completed');
+
+    // Step 5: Prepare response (LLM analysis will be added next)
+    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const response = {
       analysisId,
-      docs: [],
+      docs: [], // TODO: Will be populated by LLM analysis
       aggregate: {
         financial: { facts: 0, red_flags: 0 },
         legal: { facts: 0, red_flags: 0 },
@@ -52,11 +67,15 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
         commercial: { facts: 0, red_flags: 0 },
         other: { facts: 0, red_flags: 0 }
       },
-      summaryText: '',
-      errors: []
+      summaryText: `Processed ${processingResult.successfulFiles} files successfully. LLM analysis integration coming next.`,
+      errors: processingResult.processingErrors
     };
+
+    requestLogger.info({ 
+      analysisId,
+      processedFiles: processingResult.successfulFiles 
+    }, 'Analysis pipeline completed (truncation phase)');
     
-    requestLogger.info({ analysisId }, 'Analysis completed');
     return reply.send(response);
     
   } catch (error) {
@@ -110,4 +129,25 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
       requestId: request.id 
     });
   }
+}
+
+/**
+ * Helper function to convert stream to buffer
+ */
+async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    
+    stream.on('data', (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
+    
+    stream.on('end', () => {
+      resolve(Buffer.concat(chunks));
+    });
+    
+    stream.on('error', (error) => {
+      reject(error);
+    });
+  });
 }

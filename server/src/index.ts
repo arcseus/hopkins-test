@@ -72,8 +72,8 @@ async function start() {
   try {
     const server = await createServer();
     
-    const port = parseInt(process.env.PORT || '3000');
-    const host = process.env.HOST || '0.0.0.0';
+  const port = parseInt(process.env.PORT || '3000');
+  const host = process.env.HOST || '0.0.0.0';
     
     await server.listen({ port, host });
     
