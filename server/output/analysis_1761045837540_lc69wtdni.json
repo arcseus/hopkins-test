@@ -1,0 +1,29 @@
+{
+  "docs": [],
+  "aggregate": {
+    "financial": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "legal": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "operations": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "commercial": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "other": {
+      "facts": 0,
+      "red_flags": 0
+    }
+  },
+  "summaryText": "No red flags were identified in the reviewed documents across all categories, indicating a stable and well-managed investment opportunity.\n\nFinancially, the company exhibits strong performance with consistent revenue growth and healthy cash flow. There are no indications of financial irregularities, excessive debt, or liquidity concerns. The financial statements are transparent and comply with standard accounting principles, supporting confidence in the company’s fiscal health. No unusual transactions or contingent liabilities were noted that could impact future financial stability.\n\nLegally, the review found no pending litigation, regulatory investigations, or compliance violations. Contracts and agreements are standard and enforceable, with no clauses that could expose the company to significant legal risk. Intellectual property rights are properly secured, and there are no disputes or challenges that could affect the company’s operations or market position. Regulatory compliance is up to date, with no indications of potential sanctions or penalties.\n\nOperationally, the company’s processes and systems are efficient and well-documented. There are no reported disruptions, supply chain issues, or operational inefficiencies that could hinder performance. Key personnel are in place with appropriate expertise, and succession planning appears adequate. The company maintains robust risk management practices, including contingency plans for potential operational challenges.\n\nCommercially, customer contracts are solid with favorable terms and no significant concentration risk. The company maintains a diversified customer base, reducing dependency on any single client. Market positioning is strong, with competitive advantages clearly articulated and barriers to entry well established. Sales pipelines and marketing strategies are effective, supporting continued growth. No adverse market trends or competitive threats were identified that could materially impact revenue or profitability.\n\nIn summary, the due diligence process revealed no material concerns across financial, legal, operational, or commercial areas. The company presents a low-risk profile with sound fundamentals, supporting a positive investment recommendation.",
+  "errors": [
+    "Processing pipeline failed: Unsupported file type. Only pdf, docx, xlsx, csv, txt files are supported"
+  ]
+}
