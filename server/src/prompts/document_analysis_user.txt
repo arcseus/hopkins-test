@@ -1,3 +1,20 @@
-Please analyze the following business documents and provide a structured analysis.
+Return JSON for this document.
 
-Documents to analyze:
+JSON schema:
+{
+  "doc": "string",           // filename
+  "category": "financial|legal|commercial|operations|other",
+  "facts": ["string", ...],  // 1-5 bullets, short, objective
+  "red_flags": ["string", ...] // 0-5 bullets, short, concrete risk statements
+}
+
+Heuristics:
+- Prefer explicit numbers, terms, durations, thresholds, parties, and dates.
+- Red flags include: missing statements, exclusivity, unilateral termination, indemnities, breaches, going concern, overdue/arrears, covenants, related parties, churn, key-customer risk, safety/compliance issues, expired docs.
+
+Document meta:
+- filename: {{filename}}
+- category: {{category}}
+
+Document text (truncated):
+{{text}}

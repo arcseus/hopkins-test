@@ -1,18 +1,22 @@
 /**
  * Concurrent processing pipeline for document analysis.
- * Handles ZIP extraction, file truncation, and prepares for LLM analysis.
+ * Handles ZIP extraction, file truncation, LLM analysis with retry logic.
  */
 
 import { extractZipFiles, ExtractedFile } from './zip-extraction';
 import { truncateFile, TruncationResult } from './file-truncation';
 import { getFileExtension } from './file-types';
 import { PROCESSING_LIMITS } from './constants';
+import { analyzeDocumentWithJSONGuard } from '../services/llm';
+import { withRetry } from './retry';
 
 export interface ProcessedFile {
   originalFile: ExtractedFile;
   truncatedContent: TruncationResult;
   fileType: string;
   processingErrors?: string[];
+  llmAnalysis?: string; // JSON response from LLM
+  llmErrors?: string[];
 }
 
 export interface ProcessingResult {
@@ -25,22 +29,50 @@ export interface ProcessingResult {
 }
 
 /**
- * Processes a single file through the truncation pipeline
+ * Processes a single file through the truncation and LLM analysis pipeline
  */
 async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
   const fileType = getFileExtension(file.filename);
   const processingErrors: string[] = [];
+  const llmErrors: string[] = [];
 
   try {
-    // Extract and truncate the file content
+    // Step 1: Extract and truncate the file content
     const truncatedContent = await truncateFile(file.buffer, fileType);
+    
+    // Step 2: LLM Analysis with retry logic
+    let llmAnalysis: string | undefined;
+    try {
+      const documentData = prepareForLLMAnalysis({
+        originalFile: file,
+        truncatedContent,
+        fileType,
+        processingErrors
+      });
+      
+      // Combine filename and content for LLM analysis
+      const analysisInput = `Filename: ${documentData.filename}\nContent: ${documentData.content}`;
+      
+      // Call LLM with retry logic and JSON guard
+      llmAnalysis = await withRetry(
+        () => analyzeDocumentWithJSONGuard(analysisInput),
+        { maxAttempts: 5 }
+      );
+      
+    } catch (llmError) {
+      const errorMessage = llmError instanceof Error ? llmError.message : 'Unknown LLM error';
+      llmErrors.push(`LLM analysis failed for ${file.filename}: ${errorMessage}`);
+    }
     
     return {
       originalFile: file,
       truncatedContent,
       fileType,
-      processingErrors
+      processingErrors,
+      llmAnalysis,
+      llmErrors: llmErrors.length > 0 ? llmErrors : undefined
     };
+    
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown processing error';
     processingErrors.push(`Failed to process ${file.filename}: ${errorMessage}`);
@@ -54,7 +86,8 @@ async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
         originalLength: 0
       },
       fileType,
-      processingErrors
+      processingErrors,
+      llmErrors: llmErrors.length > 0 ? llmErrors : undefined
     };
   }
 }
@@ -159,18 +192,17 @@ export function prepareForLLMAnalysis(processedFile: ProcessedFile): {
 }
 
 /**
- * TODO: Next step - LLM Analysis Integration
+ * LLM Analysis Integration - COMPLETED
  * 
- * The next step will be to implement concurrent LLM calls for each processed file.
- * Each file will be analyzed by an LLM to extract:
- * - Document category (financial, legal, commercial, operations, other)
- * - Key facts
- * - Red flags
+ * The pipeline now includes:
+ * ✅ LLM service integration with retry logic (max 5 retries)
+ * ✅ Concurrent LLM calls (respecting MAX_CONCURRENT_LLM_CALLS)
+ * ✅ Exponential backoff with jitter for retry delays
+ * ✅ Intelligent retry logic (rate limits, timeouts vs permanent failures)
+ * ✅ Error handling and logging for LLM failures
  * 
- * The structure is already prepared with prepareForLLMAnalysis() function.
- * We'll need to:
- * 1. Create LLM service integration
- * 2. Implement concurrent LLM calls (respecting MAX_CONCURRENT_LLM_CALLS)
- * 3. Parse LLM responses into DocResult format
- * 4. Aggregate results into final AnalyseResponse
+ * Next steps:
+ * - Parse LLM responses into DocResult format
+ * - Aggregate results into final AnalyseResponse
+ * - Implement response validation and error handling
  */
