@@ -1,11 +1,16 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { createRequestLogger } from '../logger';
 import { LocalDocumentRepository } from '../storage/document-repository';
+import { MarkdownGenerator } from '../utils/markdown-generator';
 
 /**
- * POST /api/export - Export analysis as JSON
+ * POST /api/export - Export analysis as markdown
  * 
- * This endpoint retrieves analysis data by analysisId from the persistence layer.
+ * This endpoint implements smart caching:
+ * 1. Check if markdown file already exists
+ * 2. If exists, return cached markdown
+ * 3. If not, retrieve JSON data, generate markdown, cache it, and return
+ * 
  * Follows Open/Closed principle - extensible for different export formats.
  */
 export async function exportHandler(request: FastifyRequest, reply: FastifyReply) {
@@ -15,13 +20,35 @@ export async function exportHandler(request: FastifyRequest, reply: FastifyReply
   try {
     requestLogger.info({ analysisId }, 'Export request received');
     
-    // Retrieve analysis data from persistence layer
     const repository = new LocalDocumentRepository();
+    
+    // Check if markdown already exists
+    const markdownExists = await repository.markdownExists(analysisId);
+    
+    if (markdownExists) {
+      requestLogger.info({ analysisId }, 'Returning cached markdown');
+      const cachedMarkdown = await repository.getMarkdown(analysisId);
+      
+      return reply
+        .type('text/markdown')
+        .header('Content-Disposition', 'attachment; filename="vdr_summary.md"')
+        .send(cachedMarkdown);
+    }
+    
+    // Generate new markdown from JSON data
+    requestLogger.info({ analysisId }, 'Generating new markdown from analysis data');
     const analysisData = await repository.getAnalysis(analysisId);
+    const markdown = MarkdownGenerator.generateVDRSummary(analysisData);
     
-    requestLogger.info({ analysisId }, 'Analysis data retrieved successfully');
+    // Cache the generated markdown
+    await repository.saveMarkdown(analysisId, markdown);
     
-    return reply.send(analysisData);
+    requestLogger.info({ analysisId }, 'Markdown generated and cached successfully');
+    
+    return reply
+      .type('text/markdown')
+      .header('Content-Disposition', 'attachment; filename="vdr_summary.md"')
+      .send(markdown);
       
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
