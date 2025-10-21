@@ -94,7 +94,7 @@ function App() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'document_analysis_report.md';
+      link.download = 'vdr_summary.md';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
