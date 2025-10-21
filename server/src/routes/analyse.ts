@@ -2,6 +2,8 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { createRequestLogger } from '../logger';
 import { validateMultipartUpload, getValidatedFile } from '../middleware/upload';
 import { processZipFile } from '../utils/processing-pipeline';
+import { DocResult, AnalyseResponse } from '../types/analysis';
+import { LocalDocumentRepository } from '../storage/document-repository';
 import {
   FileSizeError,
   FileTypeError,
@@ -54,29 +56,65 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
       processingTime: processingResult.totalProcessingTime
     }, 'ZIP processing completed');
 
-    // Step 5: Prepare response (LLM analysis will be added next)
-    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Step 5: Build response from LLM analysis results
+    const docs: DocResult[] = [];
+    const aggregate = {
+      financial: { facts: 0, red_flags: 0 },
+      legal: { facts: 0, red_flags: 0 },
+      operations: { facts: 0, red_flags: 0 },
+      commercial: { facts: 0, red_flags: 0 },
+      other: { facts: 0, red_flags: 0 }
+    };
+
+    // Process LLM analysis results
+    requestLogger.info({ 
+      totalFiles: processingResult.processedFiles.length,
+      filesWithLLM: processingResult.processedFiles.filter(f => f.llmAnalysis).length
+    }, 'Processing LLM analysis results');
     
-    const response = {
-      analysisId,
-      docs: [], // TODO: Will be populated by LLM analysis
-      aggregate: {
-        financial: { facts: 0, red_flags: 0 },
-        legal: { facts: 0, red_flags: 0 },
-        operations: { facts: 0, red_flags: 0 },
-        commercial: { facts: 0, red_flags: 0 },
-        other: { facts: 0, red_flags: 0 }
-      },
-      summaryText: `Processed ${processingResult.successfulFiles} files successfully. LLM analysis integration coming next.`,
+    for (const file of processingResult.processedFiles) {
+      if (file.llmAnalysis) {
+        try {
+          const docResult: DocResult = JSON.parse(file.llmAnalysis);
+          docs.push(docResult);
+          
+          // Aggregate counts
+          aggregate[docResult.category].facts += docResult.facts.length;
+          aggregate[docResult.category].red_flags += docResult.red_flags.length;
+        } catch (error) {
+          requestLogger.warn({ 
+            filename: file.originalFile.filename,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }, 'Failed to parse LLM analysis result');
+        }
+      } else {
+        requestLogger.warn({ 
+          filename: file.originalFile.filename,
+          hasLLMErrors: !!file.llmErrors
+        }, 'No LLM analysis result found');
+      }
+    }
+
+    const response: AnalyseResponse = {
+      docs,
+      aggregate,
+      summaryText: `Successfully analyzed ${docs.length} documents. Found ${Object.values(aggregate).reduce((sum, cat) => sum + cat.facts, 0)} facts and ${Object.values(aggregate).reduce((sum, cat) => sum + cat.red_flags, 0)} red flags.`,
       errors: processingResult.processingErrors
     };
 
+    // Persist analysis results
+    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const repository = new LocalDocumentRepository();
+    await repository.saveAnalysis(analysisId, response);
+
     requestLogger.info({ 
       analysisId,
-      processedFiles: processingResult.successfulFiles 
-    }, 'Analysis pipeline completed (truncation phase)');
+      docsCount: docs.length,
+      totalFacts: Object.values(aggregate).reduce((sum, cat) => sum + cat.facts, 0),
+      totalRedFlags: Object.values(aggregate).reduce((sum, cat) => sum + cat.red_flags, 0)
+    }, 'Analysis pipeline completed and persisted');
     
-    return reply.send(response);
+    return reply.send({ ...response, analysisId });
     
   } catch (error) {
     // Handle validation errors with proper HTTP status codes

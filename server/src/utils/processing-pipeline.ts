@@ -11,6 +11,7 @@ import { analyzeDocumentWithJSONGuard } from '../services/llm';
 import { withRetry } from './retry';
 import { classifyDocument } from './category-classifier';
 import { buildStructuredDocumentAnalysisUserPrompt } from '../services/prompts';
+import { logger } from '../logger';
 
 export interface ProcessedFile {
   originalFile: ExtractedFile;
@@ -41,10 +42,19 @@ async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
 
   try {
     // Step 1: Extract and truncate the file content
+    logger.info({ filename: file.filename }, 'Starting file processing');
     const truncatedContent = await truncateFile(file.buffer, fileType);
+    logger.info({ 
+      filename: file.filename, 
+      contentLength: truncatedContent.text.length 
+    }, 'File truncated successfully');
     
     // Step 2: Classify document category (pre-LLM classification)
     const category = classifyDocument(currentFilename, truncatedContent.text.substring(0, 300));
+    logger.info({ 
+      filename: file.filename, 
+      category 
+    }, 'Document classified');
     
     // Step 3: LLM Analysis with retry logic
     let llmAnalysis: string | undefined;
@@ -56,14 +66,28 @@ async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
         truncatedContent.text
       );
         
+      logger.info({ 
+        filename: file.filename, 
+        promptLength: analysisInput.length 
+      }, 'Starting LLM analysis');
+        
       // Call LLM with retry logic and JSON guard
       llmAnalysis = await withRetry(
         () => analyzeDocumentWithJSONGuard(analysisInput),
         { maxAttempts: 5 }
       );
       
+      logger.info({ 
+        filename: file.filename, 
+        resultLength: llmAnalysis?.length || 0 
+      }, 'LLM analysis completed successfully');
+      
     } catch (llmError) {
       const errorMessage = llmError instanceof Error ? llmError.message : 'Unknown LLM error';
+      logger.error({ 
+        filename: file.filename, 
+        error: errorMessage 
+      }, 'LLM analysis failed');
       llmErrors.push(`LLM analysis failed for ${file.filename}: ${errorMessage}`);
     }
     
