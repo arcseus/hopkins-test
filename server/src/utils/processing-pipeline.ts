@@ -9,6 +9,7 @@ import { getFileExtension } from './file-types';
 import { PROCESSING_LIMITS } from './constants';
 import { analyzeDocumentWithJSONGuard } from '../services/llm';
 import { withRetry } from './retry';
+import { classifyDocument } from './category-classifier';
 
 export interface ProcessedFile {
   originalFile: ExtractedFile;
@@ -40,7 +41,10 @@ async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
     // Step 1: Extract and truncate the file content
     const truncatedContent = await truncateFile(file.buffer, fileType);
     
-    // Step 2: LLM Analysis with retry logic
+    // Step 2: Classify document category (pre-LLM classification)
+    const category = classifyDocument(file.filename, truncatedContent.text.substring(0, 300));
+    
+    // Step 3: LLM Analysis with retry logic
     let llmAnalysis: string | undefined;
     try {
       const documentData = prepareForLLMAnalysis({
@@ -50,8 +54,8 @@ async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
         processingErrors
       });
       
-      // Combine filename and content for LLM analysis
-      const analysisInput = `Filename: ${documentData.filename}\nContent: ${documentData.content}`;
+      // Combine filename, category, and content for LLM analysis
+      const analysisInput = `Filename: ${documentData.filename}\nCategory: ${category}\nContent: ${documentData.content}`;
       
       // Call LLM with retry logic and JSON guard
       llmAnalysis = await withRetry(
