@@ -1,0 +1,196 @@
+{
+  "docs": [
+    {
+      "doc": "02_Financials_Quarterly_Extract.csv",
+      "category": "financial",
+      "facts": [
+        "Revenue increased from £1.8m in 2024Q1 to £3.2m in 2025Q3",
+        "Gross margin declined from 78% in 2024Q1 to 70% in 2025Q3",
+        "EBITDA improved from -£300k in 2024Q1 to +£180k in 2025Q3",
+        "Operating cash flow remained negative, improving from -£450k in 2024Q1 to -£220k in 2025Q3",
+        "Days sales outstanding (DSO) increased from 58 days in 2024Q1 to 102 days in 2025Q3"
+      ],
+      "red_flags": [
+        "Deferred revenue declined from £1.1m in 2024Q1 to £880k in 2025Q3, indicating potential revenue recognition timing risk",
+        "Accounts receivable stretch and collections delays noted in 2025Q3",
+        "Enterprise deployments slipped in 2025Q3",
+        "Operating cash flow negative throughout the period",
+        "Revenue recognition change in 2025Q2 involving upfront recognition of multi-year fees (£250k) may affect comparability"
+      ]
+    },
+    {
+      "doc": "03_Customer_Concentration.csv",
+      "category": "commercial",
+      "facts": [
+        "Top 5 customers represent 82% of revenue share TTM",
+        "Largest customer, Crown Digital Directorate, accounts for 42% revenue share",
+        "Contract terms range from 12 to 24 months",
+        "Termination clauses vary: 30-day convenience, for breach only, or insolvency",
+        "Credit terms range from 45 to 60 days"
+      ],
+      "red_flags": [
+        "Single point-of-failure risk with largest customer (42% revenue)",
+        "Some contracts allow termination with 30-day convenience notice",
+        "Change of control clauses require consent or have restrictions",
+        "Price review clause with EuroTel AG allows downward adjustments every 6 months",
+        "SLA penalties up to 15% monthly fees with NorthSea Energy plc"
+      ]
+    },
+    {
+      "doc": "04_Material_Contracts_Summary.txt",
+      "category": "legal",
+      "facts": [
+        "Master Services Agreement with Crown Digital Directorate has a 12-month term with renewal by mutual agreement.",
+        "Either party may terminate the Master Services Agreement for convenience with 30 days' notice.",
+        "Change of control allows either party to terminate the Master Services Agreement.",
+        "Framework Agreement with EuroTel AG includes exclusivity preventing HAL from serving EuroTel's top-5 competitors in the DACH region during the term.",
+        "Reseller Agreement with Novarch Ltd specifies a 70%/30% revenue share and allows channel returns within 45 days."
+      ],
+      "red_flags": [
+        "Exclusivity clause in Framework Agreement may limit HAL's market opportunities in DACH region.",
+        "Termination for convenience with 30 days' notice may lead to contract instability.",
+        "Assignment prohibited without prior written consent may restrict flexibility in contract management."
+      ]
+    },
+    {
+      "doc": "05_IP_Register.csv",
+      "category": "legal",
+      "facts": [
+        "Trademark 'Highland Analytics (word)' in UK expired on 2024-09-12 with no renewal filed",
+        "Patent 'Data Normalization for Heterogeneous Streams' PCT abandoned as of 2023-12-01 due to unpaid fees",
+        "Trademark 'HAL Insight (logo)' registered with EUIPO, valid until 2028-05-06",
+        "Copyright 'Model Weights v3.2' in UK is unregistered and pledged to lender",
+        "All-asset debenture includes intellectual property"
+      ],
+      "red_flags": [
+        "Expired trademark with no renewal filed",
+        "Abandoned patent due to unpaid fees and rights lapsed",
+        "Unregistered copyright pledged to lender"
+      ]
+    },
+    {
+      "doc": "06_HR_Schedule.csv",
+      "category": "commercial",
+      "facts": [
+        "56 full-time employees across Engineering (28), Sales (12), Operations (9), and G&A (7)",
+        "12 contractors, split evenly between UK and remote locations (Poland, Ukraine), several with over 12 months continuous service",
+        "12-month staff turnover rate is 18%, with Sales turnover at 29%",
+        "7 open headcount positions: 3 Engineering, 2 Customer Service, 2 Sales",
+        "3 key personnel identified: CTO, Lead Machine Learning, Head of Sales"
+      ],
+      "red_flags": [
+        "2 employees dependent on Skilled Worker visas with sponsor licence action plan due by June 2025",
+        "1 open harassment claim currently in early conciliation"
+      ]
+    },
+    {
+      "doc": "07_IT_Security_Compliance.txt",
+      "category": "legal",
+      "facts": [
+        "ISO 27001 certification is in progress",
+        "SOC 2 certification has not started",
+        "Last penetration test conducted in November 2022 with medium findings and not fully re-tested",
+        "Approximately 180,000 user emails and usage metadata are stored, subject to UK/EU GDPR",
+        "Data Protection Agreements cover 61% of customers; three public-sector accounts remain on vendor-paper DPAs"
+      ],
+      "red_flags": [
+        "Incident on 2025-04-14 exposed approximately 4,200 user emails due to credential stuffing",
+        "Information Commissioner's Office (ICO) was not notified of the incident",
+        "Penetration test findings were medium severity and not fully re-tested",
+        "SOC 2 certification has not been initiated",
+        "38% of customers lack DPA coverage"
+      ]
+    },
+    {
+      "doc": "08_Debt_Schedule.csv",
+      "category": "commercial",
+      "facts": [
+        "Term Loan A of GBP 4,500,000 matures on 2026-03-31 with interest rate SONIA+5.25%",
+        "Term Loan A is secured by an all-asset debenture including intellectual property",
+        "Term Loan A covenants include DSCR>=1.20x and Net Leverage<=3.5x",
+        "DSCR was 0.90x as of 2025-09, and a waiver was requested in 2025-10",
+        "Revolving Credit Facility (RCF) of GBP 1,000,000 matures on 2026-03-31 with interest rate SONIA+4.75%, £850k drawn"
+      ],
+      "red_flags": [
+        "DSCR covenant breach on Term Loan A with DSCR at 0.90x below 1.20x threshold",
+        "Waiver requested for covenant breach on Term Loan A in 2025-10",
+        "Convertible Note of GBP 750,000 is unsecured and includes a Most Favored Nation clause that may affect private equity round"
+      ]
+    },
+    {
+      "doc": "09_Tax_Compliance_Summary.txt",
+      "category": "commercial",
+      "facts": [
+        "VAT arrears of £185k covering Q4 2024 to Q1 2025",
+        "HMRC Time-to-Pay plan in place through January 2026",
+        "R&D Expenditure Credit claims for FY2023–FY2024 under HMRC enquiry opened August 2025",
+        "Documentation for R&D claims is incomplete",
+        "Intercompany management fees to Founder HoldCo: £420k in FY2024 and £280k year-to-date 2025"
+      ],
+      "red_flags": [
+        "VAT arrears indicate overdue tax payments",
+        "Incomplete documentation for R&D claims may risk HMRC disallowance",
+        "Limited benchmarking on intercompany management fees to Founder HoldCo suggests transfer pricing risk"
+      ]
+    },
+    {
+      "doc": "10_QA_Log_Excerpt.txt",
+      "category": "legal",
+      "facts": [
+        "SOC 2 Type II report has not yet been initiated",
+        "Pen-test re-test is scheduled for H1 2026",
+        "Some key customer contracts require consent for assignment on change of control",
+        "The largest public-sector contract allows termination for convenience",
+        "2025-Q2 revenue step-up due to upfront recognition of multi-year fees aligned to industry norms"
+      ],
+      "red_flags": [
+        "SOC 2 Type II compliance not initiated",
+        "Pen-test remediation pending until H1 2026",
+        "Key customer contracts may restrict assignment without consent",
+        "Largest public-sector contract includes termination for convenience clause"
+      ]
+    },
+    {
+      "doc": "01_Executive_Summary.txt",
+      "category": "financial",
+      "facts": [
+        "TTM revenue to 2025-09-30 is £11.2m with 37% YoY growth",
+        "Gross margin declined from 78% to 70%",
+        "EBITDA positive since 2025-Q1 but operating cash flow remains negative",
+        "DSO stretched to 102 days and deferred revenue is falling",
+        "Largest customer accounts for 42% of TTM revenue with 30-day termination-for-convenience clause"
+      ],
+      "red_flags": [
+        "Revenue recognition policy change in 2025-Q2 brought forward multi-year fees",
+        "Customer contracts include consent requirements for assignment/change of control and exclusivity provisions",
+        "UK trademark lapsed and one PCT application abandoned; core ML model weights pledged under debenture",
+        "No SOC 2 compliance; last penetration test in 2022; April 2025 credential-stuffing incident exposed ~4,200 emails and was not reported to ICO",
+        "DSCR at 0.90x below 1.20x covenant as of 2025-09; waiver requested; VAT arrears on HMRC Time-to-Pay plan; R&D credit claim under enquiry with incomplete documentation"
+      ]
+    }
+  ],
+  "aggregate": {
+    "financial": {
+      "facts": 10,
+      "red_flags": 10
+    },
+    "legal": {
+      "facts": 20,
+      "red_flags": 15
+    },
+    "operations": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "commercial": {
+      "facts": 20,
+      "red_flags": 13
+    },
+    "other": {
+      "facts": 0,
+      "red_flags": 0
+    }
+  },
+  "summaryText": "Financial: Key financial concerns include a DSCR covenant breach on Term Loan A, with a ratio of 0.90x versus a 1.20x requirement, leading to a waiver request in October 2025. Operating cash flow remains negative despite EBITDA turning positive in early 2025. Deferred revenue declined from £1.1m to £880k, signaling potential revenue recognition timing risks, exacerbated by a 2025-Q2 policy change advancing multi-year fee recognition. VAT arrears of £185k are outstanding, with a HMRC Time-to-Pay plan active through January 2026. R&D tax credit claims for FY2023–FY2024 face HMRC enquiry due to incomplete documentation, and intercompany management fees to Founder HoldCo raise transfer pricing concerns.\n\nLegal: Several legal red flags arise from contract terms and intellectual property. Three contracts include 30-day termination-for-convenience clauses, increasing contract instability. Exclusivity provisions in the Framework Agreement restrict market access in the DACH region. Assignment restrictions and change-of-control consent requirements in key customer contracts limit flexibility. Intellectual property issues include an expired UK trademark without renewal, an abandoned PCT patent due to unpaid fees, and unregistered copyright pledged to lenders. IT security compliance is inadequate: SOC 2 certification has not started, the last penetration test in November 2022 revealed medium-severity findings that remain partially unaddressed, and a 2025 credential-stuffing incident exposed approximately 4,200 user emails without notifying the Information Commissioner’s Office.\n\nOperations: Operational risks include a stretched Days Sales Outstanding (DSO) increasing from 58 to 102 days, reflecting collection delays. Staff turnover is elevated at 18% annually, with Sales turnover at 29%, and seven open headcount positions remain unfilled, including critical roles. Two employees rely on Skilled Worker visas with a sponsor licence action plan due by mid-2025. An open harassment claim is in early conciliation. Data protection agreements cover only 61% of customers, leaving 38% without coverage, increasing compliance risk.\n\nCommercial: Customer concentration is high, with the top five customers accounting for 82% of revenue and the largest single customer representing 42%. Several contracts permit termination with 30-day convenience notice, and some include price review clauses allowing downward adjustments. SLA penalties up to 15% of monthly fees apply with key clients. Debt includes a £4.5m Term Loan A secured by an all-asset debenture covering intellectual property, and a £750k unsecured convertible note with a Most Favored Nation clause that may complicate future private equity rounds. These factors, combined with financial and operational challenges, require close oversight.",
+  "errors": []
+}

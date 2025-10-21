@@ -12,10 +12,9 @@ import type { AnalysisAggregate } from '@/types';
 
 interface SummaryCardsProps {
   aggregate: AnalysisAggregate;
-  totalDocuments: number;
 }
 
-export function SummaryCards({ aggregate, totalDocuments }: SummaryCardsProps) {
+export function SummaryCards({ aggregate }: SummaryCardsProps) {
   const categories = [
     {
       key: 'financial' as const,
@@ -52,20 +51,6 @@ export function SummaryCards({ aggregate, totalDocuments }: SummaryCardsProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Total Documents Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalDocuments}</div>
-          <p className="text-xs text-muted-foreground">
-            Documents analyzed
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Category Cards */}
       {categories.map((category) => {
         const Icon = category.icon;
@@ -102,36 +87,6 @@ export function SummaryCards({ aggregate, totalDocuments }: SummaryCardsProps) {
           </Card>
         );
       })}
-
-      {/* Summary Stats Card */}
-      <Card className="md:col-span-2 lg:col-span-1">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Summary</CardTitle>
-          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Facts:</span>
-              <span className="font-semibold">{totalFacts}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Red Flags:</span>
-              <span className="font-semibold text-destructive">{totalRedFlags}</span>
-            </div>
-            <div className="pt-2 border-t">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Risk Level:</span>
-                <Badge 
-                  variant={totalRedFlags > 10 ? "destructive" : totalRedFlags > 5 ? "secondary" : "outline"}
-                >
-                  {totalRedFlags > 10 ? "High" : totalRedFlags > 5 ? "Medium" : "Low"}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -46,24 +46,32 @@ function App() {
     setTotalFiles(0);
 
     try {
-      // Simulate progress updates (in real app, you'd get these from the server)
+      // Progress simulation: 10 equal parts over 35 seconds (3.5 seconds per part)
+      const progressSteps = 10;
+      const totalDuration = 35000; // 35 seconds in milliseconds
+      const stepDuration = totalDuration / progressSteps; // 3.5 seconds per step
+      
+      let currentStep = 0;
       const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 10;
-        });
-      }, 500);
+        currentStep++;
+        const progressPercentage = (currentStep / progressSteps) * 100;
+        
+        setProgress(progressPercentage);
+        
+        // Stop at 90% to wait for actual completion
+        if (currentStep >= progressSteps - 1) {
+          clearInterval(progressInterval);
+        }
+      }, stepDuration);
 
       // Make API call
       const result = await apiClient.analyseDocuments(file);
       
+      // Clear any remaining progress updates
       clearInterval(progressInterval);
-      setProgress(100);
       
-      // Simulate file processing count
+      // Set final progress and file counts
+      setProgress(100);
       setTotalFiles(result.docs.length);
       setCurrentFile(result.docs.length);
       
@@ -136,7 +144,6 @@ function App() {
               <h2 className="text-2xl font-semibold mb-4">Analysis Summary</h2>
               <SummaryCards 
                 aggregate={analysisResult.aggregate}
-                totalDocuments={analysisResult.docs.length}
               />
             </div>
 
