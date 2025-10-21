@@ -9,7 +9,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChevronDown, ChevronRight, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import type { DocumentResult, DocumentCategory } from '@/types';
@@ -102,102 +101,105 @@ export function ExpandableTable({ documents }: ExpandableTableProps) {
             </TableHeader>
             <TableBody>
               {documents.map((doc, index) => (
-                <Collapsible key={index} asChild>
-                  <>
-                    <TableRow className="cursor-pointer hover:bg-muted/50">
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleRow(index)}
-                          className="h-8 w-8 p-0"
-                        >
-                          {expandedRows.has(index) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="truncate max-w-[200px]" title={doc.doc}>
-                            {doc.doc}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={getCategoryBadgeVariant(doc.category)}
-                          className={getCategoryColor(doc.category)}
-                        >
-                          {doc.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="text-sm">{doc.facts.length}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <AlertTriangle className="h-4 w-4 text-destructive" />
-                          <span className="text-sm text-destructive">{doc.red_flags.length}</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    
-                    <CollapsibleContent asChild>
-                      <TableRow>
-                        <TableCell colSpan={5} className="p-0">
-                          <div className="border-t bg-muted/25 p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Key Facts Section */}
-                              <div className="space-y-3">
-                                <div className="flex items-center space-x-2">
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                  <h4 className="font-semibold text-sm">Key Facts ({doc.facts.length})</h4>
-                                </div>
+                <>
+                  {/* Main Table Row */}
+                  <TableRow 
+                    key={index} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => toggleRow(index)}
+                  >
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        {expandedRows.has(index) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate max-w-[200px]" title={doc.doc}>
+                          {doc.doc}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={getCategoryBadgeVariant(doc.category)}
+                        className={getCategoryColor(doc.category)}
+                      >
+                        {doc.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">{doc.facts.length}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <span className="text-sm text-destructive">{doc.red_flags.length}</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Expanded Content Row */}
+                  {expandedRows.has(index) && (
+                    <TableRow key={`${index}-expanded`}>
+                      <TableCell colSpan={5} className="p-0">
+                        <div className="border-t bg-muted/25 p-4">
+                          <div className="space-y-6">
+                            {/* Key Facts Section */}
+                            <div className="space-y-3">
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <h4 className="font-semibold text-sm">Key Facts ({doc.facts.length})</h4>
+                              </div>
+                              <ul className="space-y-2">
+                                {doc.facts.map((fact, factIndex) => (
+                                  <li key={factIndex} className="flex items-start space-x-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-600 mt-2 flex-shrink-0" />
+                                    <span className="text-sm text-muted-foreground">{fact}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Red Flags Section */}
+                            <div className="space-y-3">
+                              <div className="flex items-center space-x-2">
+                                <AlertTriangle className="h-4 w-4 text-destructive" />
+                                <h4 className="font-semibold text-sm">Red Flags ({doc.red_flags.length})</h4>
+                              </div>
+                              {doc.red_flags.length > 0 ? (
                                 <ul className="space-y-2">
-                                  {doc.facts.map((fact, factIndex) => (
-                                    <li key={factIndex} className="flex items-start space-x-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-green-600 mt-2 flex-shrink-0" />
-                                      <span className="text-sm text-muted-foreground">{fact}</span>
+                                  {doc.red_flags.map((flag, flagIndex) => (
+                                    <li key={flagIndex} className="flex items-start space-x-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-destructive mt-2 flex-shrink-0" />
+                                      <span className="text-sm text-muted-foreground">{flag}</span>
                                     </li>
                                   ))}
                                 </ul>
-                              </div>
-
-                              {/* Red Flags Section */}
-                              <div className="space-y-3">
-                                <div className="flex items-center space-x-2">
-                                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                                  <h4 className="font-semibold text-sm">Red Flags ({doc.red_flags.length})</h4>
-                                </div>
-                                {doc.red_flags.length > 0 ? (
-                                  <ul className="space-y-2">
-                                    {doc.red_flags.map((flag, flagIndex) => (
-                                      <li key={flagIndex} className="flex items-start space-x-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-destructive mt-2 flex-shrink-0" />
-                                        <span className="text-sm text-muted-foreground">{flag}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground italic">
-                                    No red flags identified
-                                  </p>
-                                )}
-                              </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground italic">
+                                  No red flags identified
+                                </p>
+                              )}
                             </div>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    </CollapsibleContent>
-                  </>
-                </Collapsible>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               ))}
             </TableBody>
           </Table>
