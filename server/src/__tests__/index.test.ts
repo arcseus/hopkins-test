@@ -58,7 +58,7 @@ describe('Server', () => {
   });
 
   describe('POST /api/analyse', () => {
-    it('should return 500 when multipart is not properly configured', async () => {
+    it('should return 400 when multipart is not properly configured', async () => {
       const response = await server.inject({
         method: 'POST',
         url: '/api/analyse',
@@ -70,9 +70,10 @@ describe('Server', () => {
 
       // The multipart plugin isn't working in test environment
       // This is expected behavior - the endpoint requires multipart
-      expect(response.statusCode).toBe(500);
+      expect(response.statusCode).toBe(400);
       const body = response.json();
-      expect(body).toHaveProperty('error', 'Internal server error');
+      expect(body).toHaveProperty('error', 'Invalid multipart request format');
+      expect(body).toHaveProperty('code', 'MULTIPART_ERROR');
       expect(body).toHaveProperty('requestId');
     });
   });

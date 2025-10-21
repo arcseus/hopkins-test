@@ -1,20 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { createRequestLogger } from '../logger';
-import { PROCESSING_LIMITS } from '../utils/constants';
-
-// Extend FastifyRequest to include multipart types
-interface MultipartFile {
-  fieldname: string;
-  filename: string;
-  encoding: string;
-  mimetype: string;
-  file: NodeJS.ReadableStream;
-  size: number;
-}
-
-interface MultipartRequest extends FastifyRequest {
-  file(): Promise<MultipartFile | undefined>;
-}
+import { validateMultipartUpload, getValidatedFile } from '../middleware/upload';
+import { 
+  FileSizeError, 
+  FileTypeError, 
+  NoFileError, 
+  FileValidationError,
+  UnsupportedFileTypeError,
+  MultipartError 
+} from '../errors/validation';
 
 /**
  * POST /api/analyse - Document analysis endpoint
@@ -34,44 +28,16 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
   try {
     requestLogger.info('Analysis request received');
     
-    // 1. Validate multipart upload
-    const data = await (request as any).file();
+    // 1. Validate multipart upload using middleware
+    await validateMultipartUpload(request, reply);
     
-    if (!data) {
-      requestLogger.warn('No file provided');
-      return reply.code(400).send({ 
-        error: 'No file provided',
-        requestId: request.id 
-      });
-    }
-    
-    // 2. Validate file size
-    if (data.size > PROCESSING_LIMITS.MAX_FILE_SIZE) {
-      requestLogger.warn({ 
-        size: data.size, 
-        limit: PROCESSING_LIMITS.MAX_FILE_SIZE 
-      }, 'File too large');
-      return reply.code(400).send({ 
-        error: 'File too large',
-        maxSize: `${PROCESSING_LIMITS.MAX_FILE_SIZE / (1024 * 1024)}MB`,
-        requestId: request.id 
-      });
-    }
-    
-    // 3. Validate file type (must be ZIP)
-    const filename = data.filename || '';
-    if (!filename.toLowerCase().endsWith('.zip')) {
-      requestLogger.warn({ filename }, 'Invalid file type');
-      return reply.code(400).send({ 
-        error: 'Only ZIP files are supported',
-        requestId: request.id 
-      });
-    }
+    // 2. Get validated file data
+    const validatedFile = getValidatedFile(request);
     
     requestLogger.info({ 
-      filename, 
-      size: data.size 
-    }, 'ZIP file validated');
+      filename: validatedFile.filename, 
+      size: validatedFile.size 
+    }, 'ZIP file validated successfully');
     
     // TODO: Implement ZIP extraction and analysis pipeline
     const analysisId = 'stub-analysis-id';
@@ -94,6 +60,48 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
     return reply.send(response);
     
   } catch (error) {
+    // Handle validation errors with proper HTTP status codes
+    if (error instanceof FileSizeError || 
+        error instanceof FileTypeError || 
+        error instanceof NoFileError ||
+        error instanceof FileValidationError ||
+        error instanceof UnsupportedFileTypeError) {
+      requestLogger.warn({ 
+        error: error.message, 
+        code: error.code,
+        details: error.details 
+      }, 'File validation failed');
+      
+      return reply.code(error.statusCode).send({
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        requestId: request.id
+      });
+    }
+
+    // Handle multipart parsing errors
+    if (error instanceof Error && error.message.includes('multipart')) {
+      const multipartError = new MultipartError(
+        'Invalid multipart request format',
+        { originalError: error.message }
+      );
+      
+      requestLogger.warn({ 
+        error: multipartError.message,
+        code: multipartError.code,
+        details: multipartError.details 
+      }, 'Multipart parsing failed');
+      
+      return reply.code(multipartError.statusCode).send({
+        error: multipartError.message,
+        code: multipartError.code,
+        details: multipartError.details,
+        requestId: request.id
+      });
+    }
+
+    // Handle unexpected errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     requestLogger.error({ error: errorMessage }, 'Analysis request failed');
     
