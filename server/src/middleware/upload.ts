@@ -99,7 +99,7 @@ export async function validateExtractedFiles(files: Array<{
       }
       
       // Log detection details for debugging
-      if (!validation.detected.ext) {
+      if (!validation.detected.ext && !validation.isValid) {
         detectionErrors.push(`${file.filename} (could not detect file type)`);
       }
     } catch (error) {

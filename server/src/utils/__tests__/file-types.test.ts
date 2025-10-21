@@ -70,7 +70,7 @@ describe('File Type Validation', () => {
       expect(result.isSupported).toBe(false);
     });
 
-    it('should handle file-type detection failure', async () => {
+    it('should handle file-type detection failure with fallback to extension', async () => {
       const mockBuffer = Buffer.from('Unknown content');
       const mockFilename = 'unknown.txt';
       
@@ -78,13 +78,14 @@ describe('File Type Validation', () => {
 
       const result = await validateFileBuffer(mockBuffer, mockFilename);
 
-      expect(result.isValid).toBe(false);
-      expect(result.extension).toBe('');
-      expect(result.isSupported).toBe(false);
-      expect(result.detected.ext).toBeUndefined();
+      // With hybrid approach, it falls back to extension detection
+      expect(result.isValid).toBe(true); // txt is supported and contains valid text
+      expect(result.extension).toBe('txt');
+      expect(result.isSupported).toBe(true);
+      expect(result.detected.ext).toBeUndefined(); // No content-based detection
     });
 
-    it('should handle file-type library error', async () => {
+    it('should handle file-type library error with fallback to extension', async () => {
       const mockBuffer = Buffer.from('Corrupted content');
       const mockFilename = 'corrupted.pdf';
       
@@ -92,8 +93,23 @@ describe('File Type Validation', () => {
 
       const result = await validateFileBuffer(mockBuffer, mockFilename);
 
+      // With hybrid approach, it falls back to extension detection
+      expect(result.isValid).toBe(true); // pdf is supported
+      expect(result.extension).toBe('pdf');
+      expect(result.isSupported).toBe(true);
+    });
+
+    it('should fail when both content detection and extension are unsupported', async () => {
+      const mockBuffer = Buffer.from('Binary content');
+      const mockFilename = 'malicious.exe';
+      
+      vi.mocked(fileTypeFromBuffer).mockRejectedValue(new Error('Detection failed'));
+
+      const result = await validateFileBuffer(mockBuffer, mockFilename);
+
+      // Extension-based fallback should reject unsupported files
       expect(result.isValid).toBe(false);
-      expect(result.extension).toBe('');
+      expect(result.extension).toBe('exe');
       expect(result.isSupported).toBe(false);
     });
 
