@@ -13,7 +13,119 @@ The endpoint implements a **Document Analysis Pipeline** with the following arch
 3. **Categorization Layer**: Heuristic document classification
 4. **Analysis Layer**: LLM-powered fact and red flag extraction
 5. **Aggregation Layer**: Results compilation and summary generation
-6. **Output Layer**: Structured JSON response
+6. **Persistence Layer**: In-memory storage with session management
+7. **Output Layer**: Structured JSON response with analysis ID
+
+## Data Flow & Persistence Strategy
+
+### **Session-Based Architecture**
+The system uses a **session-based approach** with in-memory storage to manage analysis results:
+
+```typescript
+// API Flow:
+POST /api/analyse → { analysisId: "uuid", results: {...} }
+POST /api/export/:id → markdown file
+```
+
+### **Persistence Layer Design**
+- **Storage**: File-based JSON storage in `mock_doc_storage/` directory
+- **Structure**: Each analysis stored as `{analysisId}.json`
+- **Content**: Exact analysis result returned to client
+- **TTL**: 24-hour expiration with cleanup service
+- **Abstraction**: Clean interface for future database migration
+
+### **File Structure**
+```
+mock_doc_storage/
+├── 550e8400-e29b-41d4-a716-446655440000.json
+├── 6ba7b810-9dad-11d1-80b4-00c04fd430c8.json
+└── 6ba7b811-9dad-11d1-80b4-00c04fd430c8.json
+```
+
+### **Benefits of This Approach**
+- **Simple**: No database setup, just file operations
+- **Persistent**: Survives server restarts
+- **Debuggable**: Easy to inspect stored data
+- **Portable**: Can move files between environments
+- **Abstraction-Ready**: Clean interface for future database migration
+- **MVP-Friendly**: Perfect for single-user sessions
+
+### **Updated API Design**
+
+```typescript
+// 1. Upload and analyze documents
+POST /api/analyse
+Content-Type: multipart/form-data
+Body: { file: <zip-file> }
+
+Response:
+{
+  "analysisId": "uuid-here",
+  "docs": [...],
+  "aggregate": {...},
+  "summaryText": "...",
+  "errors": []
+}
+
+// 2. Export analysis as markdown
+POST /api/export/:analysisId
+
+Response:
+Content-Type: text/markdown
+Content-Disposition: attachment; filename="vdr_summary.md"
+Body: <markdown-content>
+```
+
+### **Client Flow**
+1. **Upload**: Client uploads ZIP file to `/api/analyse`
+2. **Explore**: Client receives `analysisId` and displays results in UI
+3. **Export**: Client calls `/api/export/:analysisId` to download markdown
+4. **Session**: Analysis data persists for 24 hours, then auto-expires
+
+### **ADR References**
+- **ADR001**: File-based persistence layer decision
+- **ADR002**: Analysis ID in response (avoids auth complexity for assessment)
+
+### **Future Database Migration Strategy**
+
+The `AnalysisStorage` interface provides a clean abstraction for future database migration:
+
+```typescript
+// Current: File-based storage
+export class FileAnalysisStorage implements AnalysisStorage { ... }
+
+// Future: Database storage
+export class DatabaseAnalysisStorage implements AnalysisStorage {
+  async store(analysisId: string, data: AnalyseResponse): Promise<void> {
+    await db.collection('analyses').doc(analysisId).set({
+      ...data,
+      storedAt: Date.now(),
+      expiresAt: Date.now() + this.ttl
+    });
+  }
+  
+  async retrieve(analysisId: string): Promise<AnalyseResponse | null> {
+    const doc = await db.collection('analyses').doc(analysisId).get();
+    if (!doc.exists) return null;
+    
+    const data = doc.data();
+    if (Date.now() > data.expiresAt) {
+      await this.delete(analysisId);
+      return null;
+    }
+    
+    return data;
+  }
+  
+  // ... other methods
+}
+```
+
+**Migration Benefits:**
+- **Zero Code Changes**: Just swap the storage implementation
+- **Same Interface**: All endpoints work identically
+- **Gradual Migration**: Can test database implementation alongside file storage
+- **Rollback Ready**: Easy to revert to file storage if needed
 
 ## GitHub Flow Implementation Plan
 
@@ -81,7 +193,100 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
 
 ---
 
-### Phase 2: Document Processing (Branches 3-5)
+### Phase 2: Persistence Layer (Branch 3)
+
+#### Branch: `feat/persistence-layer`
+**Duration**: 1-2 hours  
+**Dependencies**: `feat/upload-skeleton`
+
+**Changes**:
+- `server/src/storage/analysis-storage.ts`: File-based analysis storage
+- `server/src/storage/cleanup.ts`: TTL cleanup service
+- `server/src/storage/types.ts`: Storage abstraction interface
+
+**Key Implementation**:
+```typescript
+// storage/analysis-storage.ts
+export interface AnalysisStorage {
+  store(analysisId: string, data: AnalyseResponse): Promise<void>;
+  retrieve(analysisId: string): Promise<AnalyseResponse | null>;
+  delete(analysisId: string): Promise<void>;
+  cleanup(): Promise<void>;
+}
+
+export class FileAnalysisStorage implements AnalysisStorage {
+  private storageDir = path.join(process.cwd(), 'mock_doc_storage');
+  private ttl = 24 * 60 * 60 * 1000; // 24 hours
+  
+  async store(analysisId: string, data: AnalyseResponse): Promise<void> {
+    const filePath = path.join(this.storageDir, `${analysisId}.json`);
+    const content = JSON.stringify({
+      ...data,
+      storedAt: Date.now(),
+      expiresAt: Date.now() + this.ttl
+    }, null, 2);
+    
+    await fs.writeFile(filePath, content, 'utf-8');
+  }
+  
+  async retrieve(analysisId: string): Promise<AnalyseResponse | null> {
+    const filePath = path.join(this.storageDir, `${analysisId}.json`);
+    
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      const data = JSON.parse(content);
+      
+      if (Date.now() > data.expiresAt) {
+        await this.delete(analysisId);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      return null;
+    }
+  }
+  
+  async delete(analysisId: string): Promise<void> {
+    const filePath = path.join(this.storageDir, `${analysisId}.json`);
+    try {
+      await fs.unlink(filePath);
+    } catch (error) {
+      // File doesn't exist, ignore
+    }
+  }
+  
+  async cleanup(): Promise<void> {
+    const files = await fs.readdir(this.storageDir);
+    const now = Date.now();
+    
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const filePath = path.join(this.storageDir, file);
+        const content = await fs.readFile(filePath, 'utf-8');
+        const data = JSON.parse(content);
+        
+        if (now > data.expiresAt) {
+          await fs.unlink(filePath);
+        }
+      }
+    }
+  }
+}
+```
+
+**Acceptance Criteria**:
+- [ ] File-based storage in `mock_doc_storage/` directory
+- [ ] JSON files named by analysis ID
+- [ ] TTL expiration handling
+- [ ] Automatic cleanup service
+- [ ] Storage abstraction interface
+- [ ] Unit tests for storage operations
+- [ ] Directory creation if not exists
+
+---
+
+### Phase 3: Document Processing (Branches 4-6)
 
 #### Branch: `feat/zip-extraction`
 **Duration**: 2-3 hours  
@@ -407,10 +612,11 @@ export async function generateSummary(
 
 #### Branch: `feat/analyse-endpoint-complete`
 **Duration**: 2-3 hours  
-**Dependencies**: `feat/llm-summary-generation`
+**Dependencies**: `feat/llm-summary-generation`, `feat/persistence-layer`
 
 **Changes**:
-- `server/src/routes/analyse.ts`: Complete endpoint implementation
+- `server/src/routes/analyse.ts`: Complete endpoint implementation with session storage
+- `server/src/routes/export.ts`: Export endpoint with session retrieval
 - `server/src/pipeline/analysis.ts`: Main processing pipeline
 - `server/src/middleware/timeout.ts`: Request timeout handling
 
@@ -419,6 +625,7 @@ export async function generateSummary(
 // routes/analyse.ts
 export async function analyseHandler(request: FastifyRequest, reply: FastifyReply) {
   const startTime = Date.now();
+  const analysisId = uuidv4();
   
   try {
     // 1. Validate upload
@@ -442,7 +649,7 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
     // 7. Aggregate results
     const aggregate = aggregateResults(analysisResults.results);
     
-    // 8. Return response
+    // 8. Store results in file storage
     const response: AnalyseResponse = {
       docs: analysisResults.results,
       aggregate,
@@ -450,7 +657,13 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
       errors: analysisResults.errors
     };
     
-    return reply.send(response);
+    await analysisStorage.store(analysisId, response);
+    
+    // 9. Return response with analysis ID
+    return reply.send({
+      analysisId,
+      ...response
+    });
     
   } catch (error) {
     logger.error('Analysis failed', { error: error.message });
@@ -460,15 +673,41 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
     });
   }
 }
+
+// routes/export.ts
+export async function exportHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { analysisId } = request.params as { analysisId: string };
+  
+  try {
+    const analysisData = await analysisStorage.retrieve(analysisId);
+    
+    if (!analysisData) {
+      return reply.code(404).send({ error: 'Analysis not found or expired' });
+    }
+    
+    const markdown = generateMarkdown(analysisData);
+    
+    return reply
+      .type('text/markdown')
+      .header('Content-Disposition', 'attachment; filename="vdr_summary.md"')
+      .send(markdown);
+      
+  } catch (error) {
+    logger.error('Export failed', { error: error.message });
+    return reply.code(500).send({ error: 'Export failed' });
+  }
+}
 ```
 
 **Acceptance Criteria**:
-- [ ] Complete end-to-end processing
+- [ ] Complete end-to-end processing with session storage
+- [ ] Returns analysis ID with results
+- [ ] Export endpoint retrieves from session
 - [ ] Handles all file types from spec
-- [ ] Returns proper JSON response format
 - [ ] Error handling for each pipeline stage
 - [ ] Performance within 2-3 minutes for 10-20 docs
 - [ ] E2E tests with sample ZIP files
+- [ ] Session expiration handling
 
 ---
 
