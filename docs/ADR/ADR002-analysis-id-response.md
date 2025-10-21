@@ -19,6 +19,5 @@ Add `analysisId` to response. Response becomes `{analysisId, docs, aggregate, su
 ## Consequences
 
 - Client must store `analysisId` for export functionality
-- Export endpoint uses `POST /api/export/:analysisId`
 - Response structure slightly differs from original spec but for prototyping it makes sense to avoid mocking an auth layer
 - To prepare for prod, we would simply remove analysis_id from the /analysis response payload and replace getting the id from URL with getting it from auth layer

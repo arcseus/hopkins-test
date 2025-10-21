@@ -60,7 +60,7 @@ export async function createServer() {
   fastify.post('/api/analyse', analyseHandler);
   
   // Export endpoint
-  fastify.post('/api/export/:analysisId', exportHandler);
+  fastify.post('/api/export', exportHandler);
 
   return fastify;
 }
@@ -81,7 +81,7 @@ async function start() {
     logger.info('Available endpoints:');
     logger.info('  GET  /health - Health check');
     logger.info('  POST /api/analyse - Document analysis');
-    logger.info('  POST /api/export/:analysisId - Export analysis');
+    logger.info('  POST /api/export - Export analysis');
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

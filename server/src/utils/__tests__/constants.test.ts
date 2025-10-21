@@ -16,7 +16,7 @@ describe('PROCESSING_LIMITS', () => {
   });
 
   it('should have correct concurrent limit', () => {
-    expect(PROCESSING_LIMITS.MAX_CONCURRENT_LLM_CALLS).toBe(6);
+    expect(PROCESSING_LIMITS.MAX_CONCURRENT_LLM_CALLS).toBe(10);
   });
 });
 
