@@ -26,6 +26,13 @@ export async function createServer() {
     genReqId: () => uuidv4()
   });
 
+  // Register multipart plugin for file uploads
+  await fastify.register(require('@fastify/multipart'), {
+    limits: {
+      fileSize: 25 * 1024 * 1024 // 25MB limit
+    }
+  });
+
   // Health check endpoint
   fastify.get('/health', async (request, reply) => {
     try {
