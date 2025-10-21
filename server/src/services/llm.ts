@@ -35,7 +35,7 @@ export interface LLMConfig {
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
   model: 'gpt-4.1-mini', // Cost-effective model for document analysis
   temperature: 0,       // Zero temperature for deterministic, factual responses
-  maxTokens: 700,       // Standard limit for document analysis calls
+  maxTokens: 500,       // Standard limit for document analysis calls
   responseFormat: 'json'  // JSON mode enabled by default for structured responses
 };
 
@@ -186,7 +186,7 @@ export async function validateLLMService(): Promise<boolean> {
     }
     
     // Test with a simple prompt to verify connectivity
-    await invokeLLM('Hello', { maxTokens: 10 });
+    await invokeLLM('Hello', null, { maxTokens: 10 });
     return true;
     
   } catch {
@@ -203,9 +203,10 @@ export async function validateLLMService(): Promise<boolean> {
  * @throws Error if LLM call fails
  */
 export async function invokeLLM(
-    prompt: string, 
-    config: Partial<LLMConfig> = {}
-  ): Promise<string> {
+  prompt: string,
+  systemPrompt?: string | null,
+  config: Partial<LLMConfig> = {}
+): Promise<string> {
     try {
       // Merge provided config with defaults
       const finalConfig = { ...DEFAULT_LLM_CONFIG, ...config };
@@ -217,14 +218,25 @@ export async function invokeLLM(
       
       // Make the LLM call
       const client = getOpenAIClient();
+      const messages: any[] = [];
+      
+      // Add system prompt if provided
+      if (systemPrompt) {
+        messages.push({
+          role: 'system',
+          content: systemPrompt
+        });
+      }
+      
+      // Add user prompt
+      messages.push({
+        role: 'user',
+        content: prompt
+      });
+      
       const requestConfig: any = {
         model: finalConfig.model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+        messages,
         temperature: finalConfig.temperature,
         max_tokens: finalConfig.maxTokens
       };

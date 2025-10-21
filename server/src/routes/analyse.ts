@@ -4,6 +4,7 @@ import { validateMultipartUpload, getValidatedFile } from '../middleware/upload'
 import { processZipFile } from '../utils/processing-pipeline';
 import { DocResult, AnalyseResponse } from '../types/analysis';
 import { LocalDocumentRepository } from '../storage/document-repository';
+import { getSummaryText } from '../services/summary';
 import {
   FileSizeError,
   FileTypeError,
@@ -95,10 +96,24 @@ export async function analyseHandler(request: FastifyRequest, reply: FastifyRepl
       }
     }
 
+    // Generate LLM summary
+    let summaryText: string;
+    try {
+      summaryText = await getSummaryText(docs);
+      requestLogger.info({ 
+        summaryLength: summaryText.length,
+        wordCount: summaryText.trim().split(/\s+/).length
+      }, 'LLM summary generated successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      requestLogger.warn({ error: errorMessage }, 'LLM summary generation failed, using fallback');
+      summaryText = `Successfully analyzed ${docs.length} documents. Found ${Object.values(aggregate).reduce((sum, cat) => sum + cat.facts, 0)} facts and ${Object.values(aggregate).reduce((sum, cat) => sum + cat.red_flags, 0)} red flags.`;
+    }
+
     const response: AnalyseResponse = {
       docs,
       aggregate,
-      summaryText: `Successfully analyzed ${docs.length} documents. Found ${Object.values(aggregate).reduce((sum, cat) => sum + cat.facts, 0)} facts and ${Object.values(aggregate).reduce((sum, cat) => sum + cat.red_flags, 0)} red flags.`,
+      summaryText,
       errors: processingResult.processingErrors
     };
 

@@ -1,0 +1,7 @@
+Input is a JSON array of per-document results:
+{{json_array}}
+
+Write a single 300–400 word summary focusing on red flags first. Group by Financial, Legal, Operations, Commercial. Where helpful, reference counts (e.g., “3 red flags across two contracts”).
+
+Respond only with the summary and no other words. Only the summary as if it would be immediately displayed to a shareholder. Noone must know an LLM worked on it.
+ou are outputting a deliverable so do not add any chars, words, notes etc. Plain text only.

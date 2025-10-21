@@ -39,7 +39,7 @@ describe('LLM Service', () => {
         model: 'gpt-4.1-mini',
         messages: [{ role: 'user', content: 'Test prompt' }],
         temperature: 0,
-        max_tokens: 700,
+        max_tokens: 500,
         response_format: { type: 'json_object' }
       });
     });
@@ -62,7 +62,7 @@ describe('LLM Service', () => {
         responseFormat: 'text' as const
       };
 
-      await invokeLLM('Test prompt', customConfig);
+      await invokeLLM('Test prompt', null, customConfig);
 
       expect(mockCreate).toHaveBeenCalledWith({
         model: 'gpt-4',
@@ -116,7 +116,7 @@ describe('LLM Service', () => {
         model: 'gpt-4.1-mini',
         messages: [{ role: 'user', content: 'Test prompt' }],
         temperature: 0,
-        max_tokens: 700,
+        max_tokens: 500,
         response_format: { type: 'json_object' }
       });
     });
@@ -241,7 +241,7 @@ describe('LLM Service', () => {
       expect(DEFAULT_LLM_CONFIG).toEqual({
         model: 'gpt-4.1-mini',
         temperature: 0,
-        maxTokens: 700,
+        maxTokens: 500,
         responseFormat: 'json'
       });
     });
