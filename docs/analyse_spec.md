@@ -20,33 +20,6 @@ The endpoint implements a **Document Analysis Pipeline** with the following arch
 ### Phase 1: Foundation & Types (Branches 1-2)
 
 #### Branch: `feat/types-and-contracts` ✅ **COMPLETED**
-**Duration**: 1-2 hours  
-**Dependencies**: None
-
-**Changes**:
-- `server/src/types/analysis.ts`: Core domain types ✅
-- `server/src/validators/analysis.ts`: Zod schemas for runtime validation ✅
-- `server/src/utils/aggregate.ts`: Aggregation logic with tests ✅
-- `server/src/utils/constants.ts`: Business rules (file limits, text truncation) ✅
-
-**Key Files**:
-```typescript
-// types/analysis.ts
-export interface DocResult {
-  doc: string;
-  category: 'financial' | 'legal' | 'commercial' | 'operations' | 'other';
-  facts: string[];
-  red_flags: string[];
-}
-
-export interface AnalyseResponse {
-  docs: DocResult[];
-  aggregate: AggregateCounts;
-  summaryText: string;
-  errors: string[];
-}
-```
-
 **Implementation Details**:
 - **Types**: Clean domain types with proper TypeScript interfaces
 - **Validators**: Zod schemas with business rule enforcement (max 5 items, 300 char limits)

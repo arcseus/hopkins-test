@@ -14,7 +14,7 @@ export function aggregateResults(docs: DocResult[]): Aggregate {
   };
 
   return docs.reduce((acc, doc) => {
-    const category = doc.category;
+    const category = doc.category as keyof Aggregate;
     acc[category].facts += doc.facts.length;
     acc[category].red_flags += doc.red_flags.length;
     return acc;
