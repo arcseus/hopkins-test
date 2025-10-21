@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import { logger, createRequestLogger } from './logger';
 import { v4 as uuidv4 } from 'uuid';
+import { analyseHandler } from './routes/analyse';
+import { exportHandler } from './routes/export';
 
 /**
  * Main application entry point.
@@ -47,36 +49,11 @@ export async function createServer() {
     }
   });
 
-  // Analyse endpoint stub
-  fastify.post('/api/analyse', async (request, reply) => {
-    try {
-      const requestLogger = createRequestLogger(request.id);
-      requestLogger.info('Analysis request received');
-      
-      // TODO: Implement full analysis pipeline
-      return {
-        docs: [],
-        aggregate: {
-          financial: { facts: 0, red_flags: 0 },
-          legal: { facts: 0, red_flags: 0 },
-          operations: { facts: 0, red_flags: 0 },
-          commercial: { facts: 0, red_flags: 0 },
-          other: { facts: 0, red_flags: 0 }
-        },
-        summaryText: '',
-        errors: []
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const requestLogger = createRequestLogger(request.id);
-      requestLogger.error({ error: errorMessage }, 'Analysis request failed');
-      
-      return reply.code(500).send({ 
-        error: 'Internal server error',
-        requestId: request.id 
-      });
-    }
-  });
+  // Analyse endpoint
+  fastify.post('/api/analyse', analyseHandler);
+  
+  // Export endpoint
+  fastify.post('/api/export/:analysisId', exportHandler);
 
   return fastify;
 }
@@ -97,6 +74,7 @@ async function start() {
     logger.info('Available endpoints:');
     logger.info('  GET  /health - Health check');
     logger.info('  POST /api/analyse - Document analysis');
+    logger.info('  POST /api/export/:analysisId - Export analysis');
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
