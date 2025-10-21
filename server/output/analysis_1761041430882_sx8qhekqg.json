@@ -1,0 +1,38 @@
+{
+  "docs": [],
+  "aggregate": {
+    "financial": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "legal": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "operations": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "commercial": {
+      "facts": 0,
+      "red_flags": 0
+    },
+    "other": {
+      "facts": 0,
+      "red_flags": 0
+    }
+  },
+  "summaryText": "Successfully analyzed 0 documents. Found 0 facts and 0 red flags.",
+  "errors": [
+    "LLM analysis failed for 02_Financials_Quarterly_Extract.csv: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 03_Customer_Concentration.csv: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 04_Material_Contracts_Summary.txt: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 05_IP_Register.csv: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 06_HR_Schedule.csv: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 07_IT_Security_Compliance.txt: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 08_Debt_Schedule.csv: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 09_Tax_Compliance_Summary.txt: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 10_QA_Log_Excerpt.txt: OpenAI API key is invalid or missing",
+    "LLM analysis failed for 01_Executive_Summary.txt: OpenAI API key is invalid or missing"
+  ]
+}

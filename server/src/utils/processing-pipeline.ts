@@ -165,6 +165,10 @@ export async function processZipFile(zipBuffer: Buffer): Promise<ProcessingResul
       if (file.processingErrors && file.processingErrors.length > 0) {
         processingErrors.push(...file.processingErrors);
       }
+      // Also collect LLM errors
+      if (file.llmErrors && file.llmErrors.length > 0) {
+        processingErrors.push(...file.llmErrors);
+      }
     });
 
     const totalProcessingTime = Date.now() - startTime;
@@ -218,18 +222,3 @@ export function prepareForLLMAnalysis(processedFile: ProcessedFile): {
   };
 }
 
-/**
- * LLM Analysis Integration - COMPLETED
- * 
- * The pipeline now includes:
- * ✅ LLM service integration with retry logic (max 5 retries)
- * ✅ Concurrent LLM calls (respecting MAX_CONCURRENT_LLM_CALLS)
- * ✅ Exponential backoff with jitter for retry delays
- * ✅ Intelligent retry logic (rate limits, timeouts vs permanent failures)
- * ✅ Error handling and logging for LLM failures
- * 
- * Next steps:
- * - Parse LLM responses into DocResult format
- * - Aggregate results into final AnalyseResponse
- * - Implement response validation and error handling
- */
