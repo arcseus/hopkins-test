@@ -10,6 +10,7 @@ import { PROCESSING_LIMITS } from './constants';
 import { analyzeDocumentWithJSONGuard } from '../services/llm';
 import { withRetry } from './retry';
 import { classifyDocument } from './category-classifier';
+import { buildStructuredDocumentAnalysisUserPrompt } from '../services/prompts';
 
 export interface ProcessedFile {
   originalFile: ExtractedFile;
@@ -33,7 +34,8 @@ export interface ProcessingResult {
  * Processes a single file through the truncation and LLM analysis pipeline
  */
 async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
-  const fileType = getFileExtension(file.filename);
+  const currentFilename = file.filename;
+  const fileType = getFileExtension(currentFilename);
   const processingErrors: string[] = [];
   const llmErrors: string[] = [];
 
@@ -42,21 +44,18 @@ async function processSingleFile(file: ExtractedFile): Promise<ProcessedFile> {
     const truncatedContent = await truncateFile(file.buffer, fileType);
     
     // Step 2: Classify document category (pre-LLM classification)
-    const category = classifyDocument(file.filename, truncatedContent.text.substring(0, 300));
+    const category = classifyDocument(currentFilename, truncatedContent.text.substring(0, 300));
     
     // Step 3: LLM Analysis with retry logic
     let llmAnalysis: string | undefined;
     try {
-      const documentData = prepareForLLMAnalysis({
-        originalFile: file,
-        truncatedContent,
-        fileType,
-        processingErrors
-      });
-      
-      // Combine filename, category, and content for LLM analysis
-      const analysisInput = `Filename: ${documentData.filename}\nCategory: ${category}\nContent: ${documentData.content}`;
-      
+      // Build structured prompt with filename, category, and content
+      const analysisInput = buildStructuredDocumentAnalysisUserPrompt(
+        currentFilename,
+        category,
+        truncatedContent.text
+      );
+        
       // Call LLM with retry logic and JSON guard
       llmAnalysis = await withRetry(
         () => analyzeDocumentWithJSONGuard(analysisInput),

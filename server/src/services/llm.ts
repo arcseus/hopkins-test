@@ -51,8 +51,8 @@ export async function analyzeDocumentWithJSONGuard(
   documentData: string,
   config: Partial<LLMConfig> = {}
 ): Promise<string> {
-  const { buildAnalysisPrompts } = await import('./prompts');
-  const { systemPrompt, userPrompt } = buildAnalysisPrompts(documentData);
+  const { loadDocumentAnalysisSystemPrompt } = await import('./prompts');
+  const systemPrompt = loadDocumentAnalysisSystemPrompt();
   
   // Use system prompt as the first message
   const messages = [
@@ -62,7 +62,7 @@ export async function analyzeDocumentWithJSONGuard(
     },
     {
       role: 'user' as const,
-      content: userPrompt
+      content: documentData
     }
   ];
   
@@ -113,7 +113,7 @@ export async function analyzeDocumentWithJSONGuard(
       },
       {
         role: 'user' as const,
-        content: userPrompt
+        content: documentData
       },
       {
         role: 'assistant' as const,

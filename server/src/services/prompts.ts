@@ -28,7 +28,7 @@ export function loadPrompt(filename: string): string {
  * 
  * @returns The system prompt content
  */
-export function loadSystemPrompt(): string {
+export function loadDocumentAnalysisSystemPrompt(): string {
   return loadPrompt('document_analysis_system.txt');
 }
 
@@ -37,33 +37,22 @@ export function loadSystemPrompt(): string {
  * 
  * @returns The user prompt template
  */
-export function loadUserPromptTemplate(): string {
+export function loadDocumentAnalysisUserPromptTemplate(): string {
   return loadPrompt('document_analysis_user.txt');
 }
 
 /**
- * Builds a complete user prompt by combining the template with document data
+ * Builds a user prompt with structured document data
  * 
- * @param documentData - The document content to analyze
+ * @param filename - Document filename
+ * @param category - Document category
+ * @param text - Document text content
  * @returns Complete user prompt ready for LLM
  */
-export function buildUserPrompt(documentData: string): string {
-  const template = loadUserPromptTemplate();
-  return `${template}\n\n${documentData}`;
-}
-
-/**
- * Builds a complete prompt pair for document analysis
- * 
- * @param documentData - The document content to analyze
- * @returns Object containing system and user prompts
- */
-export function buildAnalysisPrompts(documentData: string): {
-  systemPrompt: string;
-  userPrompt: string;
-} {
-  return {
-    systemPrompt: loadSystemPrompt(),
-    userPrompt: buildUserPrompt(documentData)
-  };
+export function buildStructuredDocumentAnalysisUserPrompt(filename: string, category: string, text: string): string {
+  const template = loadDocumentAnalysisUserPromptTemplate();
+  return template
+    .replace('{{filename}}', filename)
+    .replace('{{category}}', category)
+    .replace('{{text}}', text);
 }

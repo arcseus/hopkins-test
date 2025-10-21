@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { 
   loadPrompt, 
-  loadSystemPrompt, 
-  loadUserPromptTemplate, 
-  buildUserPrompt, 
-  buildAnalysisPrompts 
+  loadDocumentAnalysisSystemPrompt, 
+  loadDocumentAnalysisUserPromptTemplate, 
+  buildStructuredDocumentAnalysisUserPrompt
 } from '../prompts';
 
 // Mock fs module
@@ -64,59 +63,54 @@ describe('Prompt Service', () => {
       vi.mocked(readFileSync).mockReturnValue(mockContent);
       vi.mocked(join).mockReturnValue('src/prompts/document_analysis_system.txt');
 
-      const result = loadSystemPrompt();
+      const result = loadDocumentAnalysisSystemPrompt();
 
       expect(result).toBe(mockContent);
       expect(join).toHaveBeenCalledWith(expect.any(String), '..', 'prompts', 'document_analysis_system.txt');
     });
   });
 
-  describe('loadUserPromptTemplate', () => {
+  describe('loadDocumentAnalysisUserPromptTemplate', () => {
     it('should load user prompt template file', () => {
       const mockContent = 'User prompt template';
       vi.mocked(readFileSync).mockReturnValue(mockContent);
       vi.mocked(join).mockReturnValue('src/prompts/document_analysis_user.txt');
 
-      const result = loadUserPromptTemplate();
+      const result = loadDocumentAnalysisUserPromptTemplate();
 
       expect(result).toBe(mockContent);
       expect(join).toHaveBeenCalledWith(expect.any(String), '..', 'prompts', 'document_analysis_user.txt');
     });
   });
 
-  describe('buildUserPrompt', () => {
-    it('should combine template with document data', () => {
-      const mockTemplate = 'Please analyze the following documents:';
-      const documentData = 'Document content here';
+  describe('buildStructuredDocumentAnalysisUserPrompt', () => {
+    it('should build structured prompt with template variables', () => {
+      const mockTemplate = 'Document meta:\n- filename: {{filename}}\n- category: {{category}}\n\nDocument text (truncated):\n{{text}}';
+      const filename = 'test-document.pdf';
+      const category = 'financial';
+      const text = 'This is the document content.';
       
       vi.mocked(readFileSync).mockReturnValue(mockTemplate);
       vi.mocked(join).mockReturnValue('src/prompts/document_analysis_user.txt');
 
-      const result = buildUserPrompt(documentData);
+      const result = buildStructuredDocumentAnalysisUserPrompt(filename, category, text);
 
-      expect(result).toBe(`${mockTemplate}\n\n${documentData}`);
+      expect(result).toBe('Document meta:\n- filename: test-document.pdf\n- category: financial\n\nDocument text (truncated):\nThis is the document content.');
     });
-  });
 
-  describe('buildAnalysisPrompts', () => {
-    it('should build complete prompt pair', () => {
-      const mockSystemPrompt = 'System prompt content';
-      const mockUserTemplate = 'User template content:';
-      const documentData = 'Document content';
+    it('should handle special characters in template variables', () => {
+      const mockTemplate = '{{filename}} - {{category}} - {{text}}';
+      const filename = 'file with spaces & symbols.pdf';
+      const category = 'legal/contract';
+      const text = 'Content with "quotes" and \'apostrophes\'.';
       
-      vi.mocked(readFileSync)
-        .mockReturnValueOnce(mockSystemPrompt)  // First call for system prompt
-        .mockReturnValueOnce(mockUserTemplate); // Second call for user template
-      vi.mocked(join)
-        .mockReturnValueOnce('src/prompts/document_analysis_system.txt')
-        .mockReturnValueOnce('src/prompts/document_analysis_user.txt');
+      vi.mocked(readFileSync).mockReturnValue(mockTemplate);
+      vi.mocked(join).mockReturnValue('src/prompts/document_analysis_user.txt');
 
-      const result = buildAnalysisPrompts(documentData);
+      const result = buildStructuredDocumentAnalysisUserPrompt(filename, category, text);
 
-      expect(result).toEqual({
-        systemPrompt: mockSystemPrompt,
-        userPrompt: `${mockUserTemplate}\n\n${documentData}`
-      });
+      expect(result).toBe('file with spaces & symbols.pdf - legal/contract - Content with "quotes" and \'apostrophes\'.');
     });
   });
+
 });
